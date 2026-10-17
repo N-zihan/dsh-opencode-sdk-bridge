@@ -10,7 +10,9 @@
  *
  * 隔离：独立的 XDG 根（在插件数据目录下）、每次启动随机生成 server 密码、禁
  * 用 autoupdate/share/project-config，只透传普通 OS/网络变量。用户自己的
- * OpenCode 配置、凭据与会话从不被读写。
+ * OpenCode 数据库、会话与配置从不读写；唯一例外是 auth.json——用户自己的
+ * OpenCode 登录凭据会复制进隔离根（免费层闸门要求登录态，见
+ * NATIVE_PERMISSIONS 注释与 syncUserAuth）。
  *
  * @module dsh-opencode-sdk-bridge/process
  */
@@ -20,6 +22,7 @@ import fs from 'node:fs'
 import type { WriteStream } from 'node:fs'
 import fsp from 'node:fs/promises'
 import { randomBytes } from 'node:crypto'
+import os from 'node:os'
 import path from 'node:path'
 import type { OpencodeClient } from '@opencode-ai/sdk'
 import { findBinary } from './platform.js'
@@ -36,6 +39,12 @@ import { EventHub, makeClient, probeReady } from './sdk.js'
  *   agent permission deny    → FreeTierError 403
  * 所以 '*' 保持 ask：每个原生动作都会被后端显式拒绝，但在上游看来这就是一次
  * 普通的 OpenCode 会话。
+ *
+ * 2026-10-18 追加实测：仅有真实运行时已不再放行——上游免费层闸门从这晚开始
+ * 同时要求登录凭据（用户在 `opencode auth login` 里登录 OpenCode 后落在本机
+ * `~/.local/share/opencode/auth.json` 的条目）。隔离运行时缺它，首个 stream
+ * 就被 FreeTierError 拒绝（同一晚 dsh-opencode-xdbridge 的隔离运行时同样全
+ * 部被拒，可交叉验证）。对策见 syncUserAuth。
  */
 export const NATIVE_PERMISSIONS: Readonly<Record<string, 'ask' | 'deny'>> = {
   '*': 'ask',
@@ -156,6 +165,8 @@ export async function startRuntime(options: RuntimeStartOptions): Promise<OpenCo
     await fsp.mkdir(path.join(root, dir), { recursive: true, mode: 0o700 })
   }
 
+  await syncUserAuth(root, options.log)
+
   // 子进程环境显式构建：只透传普通 OS/网络设置。
   const env: Record<string, string> = {}
   for (const key of FORWARDED_ENV) {
@@ -210,6 +221,35 @@ export async function startRuntime(options: RuntimeStartOptions): Promise<OpenCo
   hub.start()
 
   return new OpenCodeRuntime(url, password, client, child, binary.version, hub)
+}
+
+/**
+ * 把用户自己的 OpenCode 登录凭据复制进隔离根。
+ *
+ * opencode 运行时从 `$XDG_DATA_HOME/opencode/auth.json` 读取本机存储的凭据；
+ * 宿主进程不设 XDG_DATA_HOME，所以用户自己的那份在
+ * `~/.local/share/opencode/auth.json`。上游免费层闸门（2026-10-18 起）在
+ * “真实运行时”之外还要求这份登录态，缺失即 FreeTierError。
+ *
+ * 这里只复制这一个文件：密钥不进环境变量、不进日志、不出网。用户没登录时
+ * 不会阻塞启动——只留一行提示（此时免费层仍会拒绝，但原因可查）。
+ */
+async function syncUserAuth(root: string, log?: (line: string) => void): Promise<void> {
+  const source = process.env.XDG_DATA_HOME
+    ? path.join(process.env.XDG_DATA_HOME, 'opencode', 'auth.json')
+    : path.join(os.homedir(), '.local', 'share', 'opencode', 'auth.json')
+  const target = path.join(root, 'data', 'opencode', 'auth.json')
+  try {
+    await fsp.copyFile(source, target)
+    log?.('已同步用户 OpenCode 登录凭据（auth.json，内容不记录）')
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code
+    if (code === 'ENOENT') {
+      log?.(`未找到用户 OpenCode 登录凭据（${source}）：免费层大概率继续 FreeTierError，请先在终端跑 opencode auth login`)
+    } else {
+      log?.(`同步 OpenCode 凭据失败（${code ?? String(error)}），免费层可能继续拒绝`)
+    }
+  }
 }
 
 /**

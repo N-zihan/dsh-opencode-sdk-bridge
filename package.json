@@ -1,6 +1,6 @@
 {
   "name": "dsh-opencode-sdk-bridge",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Run OpenCode Zen's free models inside DeepSeek Harness: a managed, isolated `opencode serve` child process (stdout port sniffing), official @opencode-ai/sdk transport, loopback OpenAI-compatible gateway with SSE, native model-provider registration through the Harness LLM seam, and a settings UI with live status, model directory and gateway credentials.",
   "license": "MIT",
   "type": "module",
