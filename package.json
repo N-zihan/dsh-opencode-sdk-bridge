@@ -1,7 +1,7 @@
 {
   "name": "dsh-opencode-sdk-bridge",
-  "version": "0.1.0",
-  "description": "Run OpenCode Zen's free models inside DeepSeek Harness: a managed, isolated `opencode serve` child process (stdout port sniffing), official @opencode-ai/sdk transport, loopback OpenAI-compatible gateway with SSE, and native model-provider registration through the Harness LLM seam.",
+  "version": "0.1.1",
+  "description": "Run OpenCode Zen's free models inside DeepSeek Harness: a managed, isolated `opencode serve` child process (stdout port sniffing), official @opencode-ai/sdk transport, loopback OpenAI-compatible gateway with SSE, native model-provider registration through the Harness LLM seam, and a settings UI with live status, model directory and gateway credentials.",
   "license": "MIT",
   "type": "module",
   "main": "lib/index.js",
@@ -47,7 +47,7 @@
     "@deepseek-ai/cordis": "^4.0.2",
     "@deepseek-ai/dsh-llm": ">=0.1.1-rc.1 <0.2.0",
     "@deepseek-ai/dsh-llm-pi-ai": ">=0.1.1-rc.1 <0.2.0",
-    "@deepseek-ai/schemastery": "^4.0.0",
+    "@deepseek-ai/schemastery": "^3.18.4",
     "@earendil-works/pi-ai": ">=0.82.1 <0.86.0"
   },
   "peerDependenciesMeta": {

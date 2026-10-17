@@ -419,7 +419,7 @@ function BridgePage(props) {
 function apply(ctx) {
   try {
     const namespace = `settings.${SETTINGS_NS}`
-    ctx.effect(() => ctx.locale.register(namespace, { zh, en }), 'dsh-opencode-sdk-bridge: settings copy')
+    ctx.effect(() => ctx.locale.register(namespace, { zh, en }))
     const t = ctx.locale.bind(namespace)
 
     installStyles()
