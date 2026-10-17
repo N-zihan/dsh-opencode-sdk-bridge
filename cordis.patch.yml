@@ -1,0 +1,7 @@
+# Register the OpenCode SDK Bridge provider. The plugin owns a managed, isolated
+# OpenCode runtime driven through @opencode-ai/sdk and exposes the free OpenCode
+# Zen models as one Harness model provider. Nothing here touches the user's own
+# OpenCode install.
+- insert:
+    - id: llm-opencode-sdk-bridge
+      name: dsh-opencode-sdk-bridge

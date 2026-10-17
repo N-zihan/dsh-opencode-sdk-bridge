@@ -1,0 +1,15 @@
+# 依赖与构建缓存
+node_modules/
+.pnpm-store/
+
+# 本地打包产物（发布时用 Release 挂附件，不入库）
+*.tgz
+
+# 日志与本地运行数据
+*.log
+*.previous
+gateway.json
+
+# 系统杂项
+Thumbs.db
+.DS_Store
