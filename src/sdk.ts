@@ -18,7 +18,7 @@ import {
   type Part,
   type Session,
 } from '@opencode-ai/sdk'
-import { BridgeError } from './protocol.js'
+import { BridgeError, normalizeUpstreamError } from './protocol.js'
 
 /** 事件在线上的实际形状（可能比生成类型多出若干事件名）。 */
 export interface WireEvent {
@@ -48,8 +48,12 @@ export function unwrap<T>(result: { data?: T; error?: unknown }, context: string
   const { data, error } = result as { data?: T; error?: any }
   if (error !== undefined && error !== null) {
     const message: string = error?.data?.message ?? error?.message ?? JSON.stringify(error)
-    const status = typeof error?.data?.statusCode === 'number' ? error.data.statusCode : 502
-    throw new BridgeError(`${context}：${message}`, status >= 500 ? 502 : status, 'upstream_error')
+    const status: number | undefined
+      = typeof error?.data?.statusCode === 'number' ? error.data.statusCode : undefined
+    const normalized = normalizeUpstreamError(message, status)
+    // 已识别的上游故障：归一化说明自含语境，不再重复拼接 context 前缀。
+    if (normalized.code !== 'upstream_error') throw normalized
+    throw new BridgeError(`${context}：${message}`, normalized.status, 'upstream_error')
   }
   if (data === undefined || data === null) throw new BridgeError(`${context}：空响应`, 502, 'upstream_error')
   return data
