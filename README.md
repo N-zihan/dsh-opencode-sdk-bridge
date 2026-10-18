@@ -151,7 +151,8 @@ npm pack   # 产出 dsh-opencode-sdk-bridge-<版本>.tgz
 
 | 现象 | 说明 |
 |------|------|
-| `FreeTierError: OpenCode's free tier can only be used from within OpenCode` | 上游拒绝，两步自查：确认 `opencode auth login` 登录过 OpenCode（凭据会被自动同步）；用官方 v2 客户端对同一模型发一条消息对照。若官方客户端同样报错，则为上游侧限制，只能等恢复或给账号充值走付费模型。 |
+| `FreeTierError: OpenCode's free tier can only be used from within OpenCode` | 上游拒绝，两步自查：确认 `opencode auth login` 登录过 OpenCode（凭据会被自动同步）；用官方 v2 客户端对同一模型发一条消息对照。若官方客户端同样报错，则为上游侧限制，只能等恢复或给账号充值走付费模型。该错误归一化为 503（`upstream_gate`），不做自动重试。 |
+| 网关返回 502「上游 OpenCode Zen 服务端故障」或「与上游的连接中断」 | 上游瞬时故障（5xx / 流被掐断）的规范化提示：插件已自动带退避重试一次；仍失败说明上游服务端还在出 500，通常几分钟内自愈，稍后再试即可。 |
 | 设置页没出现插件版块 | 安装/升级后需要完整重启 DSH：`dsh.client` 声明只在宿主启动时编入客户端图。 |
 | 端口被占用 | 配置里把 `port` / `gatewayPort` 指到固定空闲端口，或维持 `0` 走随机。 |
 | 找不到二进制 | 先 `npm i -g opencode-ai`，或让 `dsh-opencode-xdbridge` 下载一次 runtime，或配置 `binaryPath`。 |
